@@ -9,7 +9,7 @@ import (
 )
 
 var server *websocket.Conn
-var clients lib.Map[Client]
+var sessions lib.Map[Session]
 
 func Open() (err error) {
 	//server, err = websocket.Dial("", "ws", "")
@@ -32,10 +32,10 @@ func receive() {
 			break
 		}
 
-		client := clients.Load(msg.Id)
+		client := sessions.Load(msg.Id)
 		if client == nil {
-			client = NewClient(msg.Id)
-			clients.Store(msg.Id, client)
+			client = newSession(msg.Id)
+			sessions.Store(msg.Id, client)
 		}
 
 		client.Handle(&msg)

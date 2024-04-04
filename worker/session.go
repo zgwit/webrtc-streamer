@@ -9,7 +9,7 @@ import (
 	"github.com/zgwit/webrtc-streamer/source"
 )
 
-type Client struct {
+type Session struct {
 	Id string
 
 	//streams map[int8]*Stream
@@ -18,12 +18,12 @@ type Client struct {
 	source source.Source
 }
 
-func NewClient(id string) *Client {
-	m := &Client{Id: id}
+func newSession(id string) *Session {
+	m := &Session{Id: id}
 	return m
 }
 
-func (c *Client) Report(tp string, data string) {
+func (c *Session) Report(tp string, data string) {
 	msg := signaling.Message{Id: c.Id, Type: tp, Data: data}
 	err := server.WriteJSON(&msg)
 	if err != nil {
@@ -31,7 +31,7 @@ func (c *Client) Report(tp string, data string) {
 	}
 }
 
-func (c *Client) Handle(msg *signaling.Message) {
+func (c *Session) Handle(msg *signaling.Message) {
 	switch msg.Type {
 	case "ice":
 
@@ -52,7 +52,7 @@ type connectArgs struct {
 	Options map[string]any `json:"options,omitempty"`
 }
 
-func (c *Client) handleConnect(data string) {
+func (c *Session) handleConnect(data string) {
 	var arg connectArgs
 	err := json.Unmarshal([]byte(data), &arg)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *Client) handleConnect(data string) {
 	}
 }
 
-func (c *Client) handleOffer(sdp string) {
+func (c *Session) handleOffer(sdp string) {
 	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
 
 	pc, err := c.NewPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
@@ -128,7 +128,7 @@ func (c *Client) handleOffer(sdp string) {
 	c.pc = pc
 }
 
-func (c *Client) handleCandidate(str string) {
+func (c *Session) handleCandidate(str string) {
 	var candidate webrtc.ICECandidateInit
 	err := json.Unmarshal([]byte(str), &candidate)
 	if err != nil {
@@ -142,7 +142,7 @@ func (c *Client) handleCandidate(str string) {
 	}
 }
 
-func (c *Client) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
+func (c *Session) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
 	if len(configuration.ICEServers) == 0 {
 		configuration.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
 	}
@@ -161,7 +161,7 @@ func (c *Client) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.
 	return api.NewPeerConnection(configuration)
 }
 
-func (c *Client) handleAnswer(sdp string) {
+func (c *Session) handleAnswer(sdp string) {
 	answer := webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: sdp}
 	err := c.pc.SetRemoteDescription(answer)
 	if err != nil {
