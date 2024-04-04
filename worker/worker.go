@@ -32,12 +32,12 @@ func receive() {
 			break
 		}
 
-		client := sessions.Load(msg.Id)
-		if client == nil {
-			client = newSession(msg.Id)
-			sessions.Store(msg.Id, client)
+		s := sessions.Load(msg.Id)
+		if s == nil {
+			s = newSession(msg.Id)
+			sessions.Store(msg.Id, s)
 		}
 
-		client.Handle(&msg)
+		s.Handle(&msg)
 	}
 }

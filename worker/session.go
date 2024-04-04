@@ -23,70 +23,64 @@ func newSession(id string) *Session {
 	return m
 }
 
-func (c *Session) Report(tp string, data string) {
-	msg := signaling.Message{Id: c.Id, Type: tp, Data: data}
+func (s *Session) Report(tp string, data string) {
+	msg := signaling.Message{Id: s.Id, Type: tp, Data: data}
 	err := server.WriteJSON(&msg)
 	if err != nil {
 		log.Error(err)
 	}
 }
 
-func (c *Session) Handle(msg *signaling.Message) {
+func (s *Session) Handle(msg *signaling.Message) {
 	switch msg.Type {
 	case "ice":
 
 	case "connect":
-		c.handleConnect(msg.Data)
+		s.handleConnect(msg.Data)
 	case "offer":
-		c.handleOffer(msg.Data)
+		s.handleOffer(msg.Data)
 	case "answer":
-		c.handleAnswer(msg.Data)
+		s.handleAnswer(msg.Data)
 	case "candidate":
-		c.handleCandidate(msg.Data)
-
+		s.handleCandidate(msg.Data)
 	}
 }
 
-type connectArgs struct {
-	Url     string         `json:"url"`
-	Options map[string]any `json:"options,omitempty"`
-}
-
-func (c *Session) handleConnect(data string) {
-	var arg connectArgs
+func (s *Session) handleConnect(data string) {
+	var arg signaling.Connect
 	err := json.Unmarshal([]byte(data), &arg)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 	}
 
-	c.source, err = source.Get(arg.Url, arg.Options)
+	s.source, err = source.Get(arg.Url, arg.Options)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 	}
 }
 
-func (c *Session) handleOffer(sdp string) {
+func (s *Session) handleOffer(sdp string) {
 	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
 
-	pc, err := c.NewPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
+	pc, err := s.NewPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 
 	//AddTracks
-	err = c.source.AddTracks(c.Id, pc)
+	err = s.source.AddTracks(s.Id, pc)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 
 	//监听主要事件
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		if connectionState == webrtc.ICEConnectionStateDisconnected {
-			//_ = c.Close()
+			//_ = s.Close()
 		}
-		c.Report("state", connectionState.String())
+		s.Report("state", connectionState.String())
 	})
 	pc.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnMessage(func(msg webrtc.DataChannelMessage) {
@@ -97,18 +91,18 @@ func (c *Session) handleOffer(sdp string) {
 		can := candidate.ToJSON()
 		str, _ := json.Marshal(can)
 		//将sdp发送到浏览器
-		c.Report("candidate", string(str))
+		s.Report("candidate", string(str))
 	})
 
 	if err = pc.SetRemoteDescription(offer); err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 
 	//回复消息
 	answer, err := pc.CreateAnswer(nil)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 
@@ -116,33 +110,33 @@ func (c *Session) handleOffer(sdp string) {
 	//gc := webrtc.GatheringCompletePromise(pc)
 
 	if err = pc.SetLocalDescription(answer); err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 
 	//<-gc
 
 	//将sdp发送到浏览器
-	c.Report("answer", pc.LocalDescription().SDP)
+	s.Report("answer", pc.LocalDescription().SDP)
 
-	c.pc = pc
+	s.pc = pc
 }
 
-func (c *Session) handleCandidate(str string) {
+func (s *Session) handleCandidate(str string) {
 	var candidate webrtc.ICECandidateInit
 	err := json.Unmarshal([]byte(str), &candidate)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
-	err = c.pc.AddICECandidate(candidate)
+	err = s.pc.AddICECandidate(candidate)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 		return
 	}
 }
 
-func (c *Session) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
+func (s *Session) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
 	if len(configuration.ICEServers) == 0 {
 		configuration.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
 	}
@@ -161,10 +155,10 @@ func (c *Session) NewPeerConnection(configuration webrtc.Configuration) (*webrtc
 	return api.NewPeerConnection(configuration)
 }
 
-func (c *Session) handleAnswer(sdp string) {
+func (s *Session) handleAnswer(sdp string) {
 	answer := webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: sdp}
-	err := c.pc.SetRemoteDescription(answer)
+	err := s.pc.SetRemoteDescription(answer)
 	if err != nil {
-		c.Report("error", err.Error())
+		s.Report("error", err.Error())
 	}
 }

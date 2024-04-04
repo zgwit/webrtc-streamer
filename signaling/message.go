@@ -5,3 +5,8 @@ type Message struct {
 	Type string `json:"type,omitempty"`
 	Data string `json:"data,omitempty"`
 }
+
+type Connect struct {
+	Url     string         `json:"url"`
+	Options map[string]any `json:"options,omitempty"`
+}
