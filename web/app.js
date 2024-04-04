@@ -32,6 +32,7 @@ ws.onmessage = async function (event) {
             await pc.setRemoteDescription(new RTCSessionDescription({type: 'offer', sdp: msg.data}))
             let answer = await pc.createAnswer()
             send("answer", answer.sdp)
+            await pc.setLocalDescription(answer)
             break
         case "answer":
             await pc.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: msg.data}))
@@ -55,7 +56,7 @@ pc.onnegotiationneeded = async function () {
 };
 
 pc.ontrack = function (event) {
-    console.log("ontrack", event.streams.length + ' track is delivered')
+    console.log("ontrack", event.streams)
 
     stream.addTrack(event.track);
     let videoElem = document.getElementById("video")
@@ -73,3 +74,4 @@ pc.oniceconnectionstatechange = function (event) {
 }
 
 pc.addTransceiver("video", {'direction': 'sendrecv'})
+
