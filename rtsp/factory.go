@@ -8,6 +8,6 @@ func init() {
 	source.Register("rtsp", factory)
 }
 
-func factory(url string) (source.Source, error) {
+func factory(url string, options source.Options) (source.Source, error) {
 	return &Camera{Url: url}, nil
 }

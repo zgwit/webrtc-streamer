@@ -3,6 +3,7 @@ package worker
 import (
 	"github.com/gorilla/websocket"
 	"github.com/zgwit/iot-master/v4/lib"
+	"github.com/zgwit/iot-master/v4/pkg/log"
 	"github.com/zgwit/webrtc-streamer/signaling"
 )
 
@@ -11,7 +12,6 @@ var server *websocket.Conn
 var sessions lib.Map[Session]
 
 func Open(url string) (err error) {
-	//server, err = websocket.Dial("", "ws", "")
 	server, _, err = websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return err
@@ -23,6 +23,7 @@ func Open(url string) (err error) {
 		if err != nil {
 			break
 		}
+		log.Println("receive msg ", msg)
 
 		//TODO 删除 session
 		s := sessions.Load(msg.Id)

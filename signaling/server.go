@@ -17,7 +17,7 @@ func (s *Server) ConnectWorker(id string, ws *websocket.Conn) {
 		worker.Close()
 	}
 
-	worker = &Worker{ws: ws}
+	worker = &Worker{id: id, ws: ws}
 	s.workers.Store(id, worker)
 
 	worker.Serve()

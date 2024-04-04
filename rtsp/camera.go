@@ -39,17 +39,19 @@ func (c *Camera) Check() error {
 	return nil
 }
 
-func (c *Camera) AddTracks(cid string, pc *webrtc.PeerConnection) error {
+func (c *Camera) Attach(cid string, pc *webrtc.PeerConnection) error {
 	if c.rtsp == nil {
 		return errors.New("未连接")
 	}
 
-	client := newClient(pc)
-	c.clients.Store(cid, client)
-	return nil
+	s := newSession(pc)
+	c.clients.Store(cid, s)
+
+	return s.attach(c.rtsp.CodecData)
 }
 
 func (c *Camera) handleCodecUpdate() {
+	//TODO 动态添加到pc上
 }
 
 func (c *Camera) receive() {

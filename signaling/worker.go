@@ -8,6 +8,7 @@ import (
 )
 
 type Worker struct {
+	id      string
 	ws      *websocket.Conn
 	viewers lib.Map[Viewer] //viewers map[string]*Viewer
 }
@@ -28,6 +29,8 @@ func (w *Worker) Serve() {
 			log.Error(err)
 			break
 		}
+		log.Trace("worker receive", w.id, msg)
+
 		//转发
 		if msg.Id != "" {
 			client := w.viewers.Load(msg.Id)
@@ -57,7 +60,7 @@ func (w *Worker) Connect(ws *websocket.Conn) {
 	w.viewers.Store(cid, viewer)
 
 	//通知连接
-	_ = w.ws.WriteJSON(&Message{Id: cid, Type: "connect"})
+	//_ = w.ws.WriteJSON(&Message{Id: cid, Type: "connect"})
 
 	for {
 		var msg Message
@@ -66,6 +69,7 @@ func (w *Worker) Connect(ws *websocket.Conn) {
 			log.Error(err)
 			break
 		}
+		log.Trace("viewer receive", w.id, cid, msg)
 
 		msg.Id = cid
 		err = w.ws.WriteJSON(msg)

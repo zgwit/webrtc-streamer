@@ -57,60 +57,35 @@ func (s *Session) handleConnect(data string) {
 	err := json.Unmarshal([]byte(data), &arg)
 	if err != nil {
 		s.Report("error", err.Error())
+		return
 	}
 
 	s.source, err = source.Get(arg.Url, arg.Options)
 	if err != nil {
 		s.Report("error", err.Error())
+		return
 	}
-}
 
-func (s *Session) handleDisconnect(data string) {
-	sessions.Delete(s.Id)
-}
-
-func (s *Session) handleOffer(sdp string) {
-	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
-
-	pc, err := s.newPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
+	err = s.createPeerConnection()
 	if err != nil {
 		s.Report("error", err.Error())
 		return
 	}
 
-	//AddTracks
-	err = s.source.AddTracks(s.Id, pc)
+	//Attach
+	err = s.source.Attach(s.Id, s.pc)
 	if err != nil {
 		s.Report("error", err.Error())
 		return
 	}
 
-	//监听主要事件
-	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		if connectionState == webrtc.ICEConnectionStateDisconnected {
-			_ = s.Close()
-		}
-		s.Report("state", connectionState.String())
-	})
-	pc.OnDataChannel(func(d *webrtc.DataChannel) {
-		d.OnMessage(func(msg webrtc.DataChannelMessage) {
-			//_ = d.Report(msg.Data)
-		})
-	})
-	pc.OnICECandidate(func(candidate *webrtc.ICECandidate) {
-		can := candidate.ToJSON()
-		str, _ := json.Marshal(can)
-		//将sdp发送到浏览器
-		s.Report("candidate", string(str))
-	})
-
-	if err = pc.SetRemoteDescription(offer); err != nil {
+	offer, err := s.pc.CreateOffer(nil)
+	if err != nil {
 		s.Report("error", err.Error())
 		return
 	}
 
-	//回复消息
-	answer, err := pc.CreateAnswer(nil)
+	err = s.pc.SetLocalDescription(offer)
 	if err != nil {
 		s.Report("error", err.Error())
 		return
@@ -119,17 +94,54 @@ func (s *Session) handleOffer(sdp string) {
 	//等待ice收集完成
 	//gc := webrtc.GatheringCompletePromise(pc)
 
-	if err = pc.SetLocalDescription(answer); err != nil {
+	//s.Report("offer", offer.SDP)
+	s.Report("offer", s.pc.LocalDescription().SDP)
+}
+
+func (s *Session) handleDisconnect(data string) {
+	sessions.Delete(s.Id)
+}
+
+func (s *Session) handleOffer(sdp string) {
+
+	err := s.createPeerConnection()
+	if err != nil {
 		s.Report("error", err.Error())
 		return
 	}
 
+	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
+	if err = s.pc.SetRemoteDescription(offer); err != nil {
+		s.Report("error", err.Error())
+		return
+	}
+
+	//Attach
+	err = s.source.Attach(s.Id, s.pc)
+	if err != nil {
+		s.Report("error", err.Error())
+		return
+	}
+
+	//回复消息
+	answer, err := s.pc.CreateAnswer(nil)
+	if err != nil {
+		s.Report("error", err.Error())
+		return
+	}
+
+	//等待ice收集完成
+	//gc := webrtc.GatheringCompletePromise(pc)
+
+	if err = s.pc.SetLocalDescription(answer); err != nil {
+		s.Report("error", err.Error())
+		return
+	}
 	//<-gc
 
 	//将sdp发送到浏览器
-	s.Report("answer", pc.LocalDescription().SDP)
-
-	s.pc = pc
+	//s.Report("answer", answer.SDP)
+	s.Report("answer", s.pc.LocalDescription().SDP)
 }
 
 func (s *Session) handleCandidate(str string) {
@@ -146,23 +158,54 @@ func (s *Session) handleCandidate(str string) {
 	}
 }
 
-func (s *Session) newPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
-	if len(configuration.ICEServers) == 0 {
-		configuration.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
+func (s *Session) createPeerConnection() (err error) {
+	config := webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback}
+
+	if len(config.ICEServers) == 0 {
+		config.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
 	}
 
 	me := &webrtc.MediaEngine{}
-	if err := me.RegisterDefaultCodecs(); err != nil {
-		return nil, err
+	err = me.RegisterDefaultCodecs()
+	if err != nil {
+		return
 	}
 
 	r := &interceptor.Registry{}
-	if err := webrtc.RegisterDefaultInterceptors(me, r); err != nil {
-		return nil, err
+	err = webrtc.RegisterDefaultInterceptors(me, r)
+	if err != nil {
+		return
 	}
 
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithInterceptorRegistry(r))
-	return api.NewPeerConnection(configuration)
+	s.pc, err = api.NewPeerConnection(config)
+	if err != nil {
+		return
+	}
+
+	//监听主要事件
+	s.pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+		if connectionState == webrtc.ICEConnectionStateDisconnected {
+			_ = s.Close()
+		}
+		s.Report("state", connectionState.String())
+	})
+	s.pc.OnDataChannel(func(d *webrtc.DataChannel) {
+		d.OnMessage(func(msg webrtc.DataChannelMessage) {
+			//_ = d.Report(msg.Data)
+		})
+	})
+	s.pc.OnICECandidate(func(candidate *webrtc.ICECandidate) {
+		if candidate == nil {
+			return
+		}
+		can := candidate.ToJSON()
+		str, _ := json.Marshal(can)
+		//将sdp发送到浏览器
+		s.Report("candidate", string(str))
+	})
+
+	return
 }
 
 func (s *Session) handleAnswer(sdp string) {

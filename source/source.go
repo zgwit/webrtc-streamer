@@ -4,5 +4,5 @@ import "github.com/pion/webrtc/v3"
 
 type Source interface {
 	Check() error
-	AddTracks(cid string, pc *webrtc.PeerConnection) error
+	Attach(cid string, pc *webrtc.PeerConnection) error
 }

@@ -5,32 +5,43 @@ let ws = new WebSocket("ws://localhost:8080/connect/test")
 let id
 
 function send(type, data) {
+    console.log('[SEND] ===>', type, data)
+
     if (typeof data === "object") {
         data = JSON.stringify(data)
     }
-    ws.send(JSON.stringify({type, data}))
+    let text = JSON.stringify({id, type, data})
+    ws.send(text)
 }
 
 ws.onerror = console.error
 
 ws.onopen = function (event) {
     console.log("websocket onopen")
-    send("connect", {
-        url: "rtsp://localhost:8554/mystream"
-    })
+    send("connect", {url: "rtsp://localhost:8554/mystream"})
 }
 
-ws.onmessage = function (event) {
-    console.log("onmessage", event)
-    let data = event.data
-    let msg = JSON.parse(data)
+ws.onmessage = async function (event) {
+    //console.log("<---", event.data)
+    let msg = JSON.parse(event.data)
+    console.log('[RECV] <===', msg.type, msg.data)
+
     id = msg.id
     switch (msg.type) {
+        case "offer":
+            await pc.setRemoteDescription(new RTCSessionDescription({type: 'offer', sdp: msg.data}))
+            let answer = await pc.createAnswer()
+            send("answer", answer.sdp)
+            break
         case "answer":
-            pc.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: msg.data})).then()
+            await pc.setRemoteDescription(new RTCSessionDescription({type: 'answer', sdp: msg.data}))
             break
         case "candidate":
-            pc.addIceCandidate(new RTCIceCandidate(JSON.parse(msg.data))).then()
+            if (msg.data)
+                await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(msg.data)))
+            break
+        case "error":
+            console.error("streamer error", msg.data)
             break
     }
 }
@@ -38,11 +49,10 @@ ws.onmessage = function (event) {
 pc.onnegotiationneeded = async function () {
     console.log("onnegotiationneeded")
 
-    let offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    send("offer", offer.sdp)
+    // let offer = await pc.createOffer()
+    // await pc.setLocalDescription(offer)
+    // send("offer", offer.sdp)
 };
-
 
 pc.ontrack = function (event) {
     console.log("ontrack", event.streams.length + ' track is delivered')
@@ -53,14 +63,13 @@ pc.ontrack = function (event) {
 }
 
 pc.onicecandidate = function (event) {
-    send("candidate", event.candidate.toJSON())
+    console.log("candidate", event.candidate)
+    if (event.candidate)
+        send("candidate", event.candidate.toJSON())
 }
 
 pc.oniceconnectionstatechange = function (event) {
     console.log("oniceconnectionstatechange", pc.iceConnectionState)
 }
 
-
-// pc.addTransceiver(value.Type, {
-//     'direction': 'sendrecv'
-// })
+pc.addTransceiver("video", {'direction': 'sendrecv'})

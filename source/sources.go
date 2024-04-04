@@ -29,13 +29,15 @@ func Create(url string, options Options) (source Source, err error) {
 }
 
 func Get(url string, options Options) (source Source, err error) {
-	source = *sources.Load(url)
-	if source == nil {
+	src := sources.Load(url)
+	if src == nil {
 		source, err = Create(url, options)
 		if err != nil {
 			return
 		}
 		sources.Store(url, &source)
+	} else {
+		source = *src
 	}
 
 	return source, source.Check()
