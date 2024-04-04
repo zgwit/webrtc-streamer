@@ -13,7 +13,7 @@ var upper = &websocket.Upgrader{
 	//HandshakeTimeout: time.Second,
 	ReadBufferSize:  512,
 	WriteBufferSize: 512,
-	Subprotocols:    []string{"mqtt"},
+	Subprotocols:    []string{"webrtc"},
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
@@ -44,4 +44,9 @@ func main() {
 		server.ConnectViewer(ctx.Param("id"), ws)
 	})
 
+	err := app.Run(":8080")
+	if err != nil {
+		log.Error(err)
+		return
+	}
 }

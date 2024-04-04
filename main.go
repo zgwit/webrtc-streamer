@@ -3,9 +3,10 @@ package main
 import (
 	"github.com/spf13/viper"
 	"github.com/zgwit/iot-master/v4/pkg/config"
+	"github.com/zgwit/iot-master/v4/pkg/log"
 	_ "github.com/zgwit/webrtc-streamer/source"
 	"github.com/zgwit/webrtc-streamer/worker"
-	"log"
+	"time"
 )
 
 func main() {
@@ -17,8 +18,11 @@ func main() {
 		_ = config.Store()
 	}
 
-	err = worker.Open(viper.GetString("server"))
-	if err != nil {
-		log.Fatal(err)
+	for {
+		err = worker.Open(viper.GetString("server"))
+		if err != nil {
+			log.Error(err)
+		}
+		time.Sleep(time.Second)
 	}
 }
