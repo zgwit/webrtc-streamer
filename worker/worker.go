@@ -34,7 +34,7 @@ func receive() {
 
 		client := clients.Load(msg.Id)
 		if client == nil {
-			client = NewClient(nil)
+			client = NewClient(msg.Id)
 			clients.Store(msg.Id, client)
 		}
 

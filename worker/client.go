@@ -18,8 +18,8 @@ type Client struct {
 	source source.Source
 }
 
-func NewClient(source source.Source) *Client {
-	m := &Client{source: source}
+func NewClient(id string) *Client {
+	m := &Client{Id: id}
 	return m
 }
 
@@ -36,7 +36,7 @@ func (c *Client) Handle(msg *signaling.Message) {
 	case "ice":
 
 	case "connect":
-		//client.handleConnect(msg.Data)
+		c.handleConnect(msg.Data)
 	case "offer":
 		c.handleOffer(msg.Data)
 	case "answer":
@@ -44,6 +44,24 @@ func (c *Client) Handle(msg *signaling.Message) {
 	case "candidate":
 		c.handleCandidate(msg.Data)
 
+	}
+}
+
+type connectArgs struct {
+	Url     string         `json:"url"`
+	Options map[string]any `json:"options,omitempty"`
+}
+
+func (c *Client) handleConnect(data string) {
+	var arg connectArgs
+	err := json.Unmarshal([]byte(data), &arg)
+	if err != nil {
+		c.Report("error", err.Error())
+	}
+
+	c.source, err = source.Get(arg.Url, arg.Options)
+	if err != nil {
+		c.Report("error", err.Error())
 	}
 }
 

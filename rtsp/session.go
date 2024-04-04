@@ -5,36 +5,38 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-type Client struct {
+type Session struct {
 	connection *webrtc.PeerConnection
 	streams    map[int]*Stream
 	queue      chan *av.Packet
 }
 
-func newClient(connection *webrtc.PeerConnection) *Client {
-	client := &Client{
+func newClient(connection *webrtc.PeerConnection) *Session {
+	s := &Session{
 		connection: connection,
 		streams:    make(map[int]*Stream),
 		queue:      make(chan *av.Packet, 100),
 	}
-	go client.sending()
-	return client
+	go s.sender()
+	return s
 }
 
-func (c *Client) Put(pkt *av.Packet) {
-	if len(c.queue) < cap(c.queue) {
-		c.queue <- pkt
+func (s *Session) Put(pkt *av.Packet) {
+	if len(s.queue) < cap(s.queue) {
+		s.queue <- pkt
 	}
 }
 
-func (c *Client) sending() {
+func (s *Session) sender() {
 	for {
-		pkt := <-c.queue
+		//TODO select quit
+
+		pkt := <-s.queue
 		if pkt == nil {
 			break
 		}
 
-		stream, ok := c.streams[int(pkt.Idx)]
+		stream, ok := s.streams[int(pkt.Idx)]
 		if !ok {
 			continue
 		}

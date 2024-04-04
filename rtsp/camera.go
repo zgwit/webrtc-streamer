@@ -15,7 +15,7 @@ type Camera struct {
 	//RTSP连接
 	rtsp *rtspv2.RTSPClient
 
-	clients lib.Map[Client]
+	clients lib.Map[Session]
 }
 
 func (c *Camera) Check() error {
@@ -74,7 +74,7 @@ func (c *Camera) receive() {
 			if pkt.IsKeyFrame {
 				autoClose.Reset(20 * time.Second)
 			}
-			c.clients.Range(func(_ string, client *Client) bool {
+			c.clients.Range(func(_ string, client *Session) bool {
 				client.Put(pkt)
 				//if len(client.queue) < cap(client.queue) {
 				//	client.queue <- pkt
