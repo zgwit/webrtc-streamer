@@ -20,11 +20,7 @@ func (w *Worker) Close() {
 	})
 }
 
-func (w *Worker) Open() {
-	go w.receive()
-}
-
-func (w *Worker) receive() {
+func (w *Worker) Serve() {
 	for {
 		var msg Message
 		err := w.ws.ReadJSON(&msg)
@@ -52,25 +48,29 @@ func (w *Worker) receive() {
 	}
 }
 
-func (w *Worker) Connect(ws *websocket.Conn) (err error) {
+func (w *Worker) Connect(ws *websocket.Conn) {
 	cid := uuid.NewString()
 	log.Info("connect ", cid)
 
-	w.viewers.Store(cid, &Viewer{ws: ws})
+	viewer := &Viewer{ws: ws}
+
+	w.viewers.Store(cid, viewer)
 
 	//通知连接
 	_ = w.ws.WriteJSON(&Message{Id: cid, Type: "connect"})
 
 	for {
 		var msg Message
-		err = ws.ReadJSON(&msg)
+		err := ws.ReadJSON(&msg)
 		if err != nil {
+			log.Error(err)
 			break
 		}
 
 		msg.Id = cid
 		err = w.ws.WriteJSON(msg)
 		if err != nil {
+			log.Error(err)
 			break
 		}
 	}

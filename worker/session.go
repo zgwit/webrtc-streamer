@@ -23,6 +23,10 @@ func newSession(id string) *Session {
 	return m
 }
 
+func (s *Session) Close() error {
+	return s.pc.Close()
+}
+
 func (s *Session) Report(tp string, data string) {
 	msg := signaling.Message{Id: s.Id, Type: tp, Data: data}
 	err := server.WriteJSON(&msg)
@@ -37,6 +41,8 @@ func (s *Session) Handle(msg *signaling.Message) {
 
 	case "connect":
 		s.handleConnect(msg.Data)
+	case "disconnect":
+		s.handleDisconnect(msg.Data)
 	case "offer":
 		s.handleOffer(msg.Data)
 	case "answer":
@@ -59,10 +65,14 @@ func (s *Session) handleConnect(data string) {
 	}
 }
 
+func (s *Session) handleDisconnect(data string) {
+	sessions.Delete(s.Id)
+}
+
 func (s *Session) handleOffer(sdp string) {
 	offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: sdp}
 
-	pc, err := s.NewPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
+	pc, err := s.newPeerConnection(webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback})
 	if err != nil {
 		s.Report("error", err.Error())
 		return
@@ -78,7 +88,7 @@ func (s *Session) handleOffer(sdp string) {
 	//监听主要事件
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		if connectionState == webrtc.ICEConnectionStateDisconnected {
-			//_ = s.Close()
+			_ = s.Close()
 		}
 		s.Report("state", connectionState.String())
 	})
@@ -136,7 +146,7 @@ func (s *Session) handleCandidate(str string) {
 	}
 }
 
-func (s *Session) NewPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
+func (s *Session) newPeerConnection(configuration webrtc.Configuration) (*webrtc.PeerConnection, error) {
 	if len(configuration.ICEServers) == 0 {
 		configuration.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
 	}

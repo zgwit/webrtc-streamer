@@ -3,11 +3,10 @@ package source
 import (
 	"errors"
 	"github.com/zgwit/iot-master/v4/lib"
-	"github.com/zgwit/iot-master/v4/types"
 	"strings"
 )
 
-type Factory func(url string, options types.Options) (Source, error)
+type Factory func(url string, options Options) (Source, error)
 
 var factories = map[string]Factory{}
 
@@ -18,7 +17,7 @@ func Register(prefix string, factory Factory) {
 	factories[prefix] = factory
 }
 
-func Create(url string, options types.Options) (source Source, err error) {
+func Create(url string, options Options) (source Source, err error) {
 	urls := strings.Split(url, "://")
 	prefix := urls[0]
 	if factory, ok := factories[prefix]; ok {
@@ -29,7 +28,7 @@ func Create(url string, options types.Options) (source Source, err error) {
 	return
 }
 
-func Get(url string, options types.Options) (source Source, err error) {
+func Get(url string, options Options) (source Source, err error) {
 	source = *sources.Load(url)
 	if source == nil {
 		source, err = Create(url, options)

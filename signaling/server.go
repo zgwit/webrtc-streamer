@@ -1,31 +1,33 @@
 package signaling
 
 import (
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/zgwit/iot-master/v4/lib"
+	"github.com/zgwit/iot-master/v4/pkg/log"
 )
 
 type Server struct {
 	workers lib.Map[Worker]
 }
 
-// Register 注册Worker
-func (s *Server) Register(id string, ws *websocket.Conn) {
+// ConnectWorker 注册Worker
+func (s *Server) ConnectWorker(id string, ws *websocket.Conn) {
 	worker := s.workers.Load(id)
 	if worker != nil {
-		worker.ws = ws
-		go worker.receive()
-	} else {
-		worker = &Worker{ws: ws}
-		s.workers.Store(id, worker)
+		worker.Close()
 	}
+
+	worker = &Worker{ws: ws}
+	s.workers.Store(id, worker)
+
+	worker.Serve()
 }
 
-func (s *Server) Connect(id string, ws *websocket.Conn) error {
+func (s *Server) ConnectViewer(id string, ws *websocket.Conn) {
 	worker := s.workers.Load(id)
 	if worker == nil {
-		return fmt.Errorf("worker not exits ", id)
+		log.Errorf("worker %s not exits ", id)
+		return
 	}
-	return worker.Connect(ws)
+	worker.Connect(ws)
 }

@@ -1,0 +1,2 @@
+data: data
+server: ws://localhost:8080/worker/test
