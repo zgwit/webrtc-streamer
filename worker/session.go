@@ -29,7 +29,7 @@ func (s *Session) Close() error {
 
 func (s *Session) Report(tp string, data string) {
 	msg := signaling.Message{Id: s.Id, Type: tp, Data: data}
-	err := server.WriteJSON(&msg)
+	err := WriteMessage(&msg)
 	if err != nil {
 		log.Error(err)
 	}

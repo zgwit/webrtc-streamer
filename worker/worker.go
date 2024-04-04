@@ -5,6 +5,7 @@ import (
 	"github.com/zgwit/iot-master/v4/lib"
 	"github.com/zgwit/iot-master/v4/pkg/log"
 	"github.com/zgwit/webrtc-streamer/signaling"
+	"sync"
 )
 
 var server *websocket.Conn
@@ -35,4 +36,12 @@ func Open(url string) (err error) {
 		s.Handle(&msg)
 	}
 	return
+}
+
+var writeLock sync.Mutex
+
+func WriteMessage(msg *signaling.Message) error {
+	writeLock.Lock()
+	defer writeLock.Unlock()
+	return server.WriteJSON(&msg)
 }

@@ -5,11 +5,13 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/zgwit/iot-master/v4/lib"
 	"github.com/zgwit/iot-master/v4/pkg/log"
+	"sync"
 )
 
 type Worker struct {
 	id      string
 	ws      *websocket.Conn
+	wsLock  sync.Mutex
 	viewers lib.Map[Viewer] //viewers map[string]*Viewer
 }
 
@@ -51,6 +53,13 @@ func (w *Worker) Serve() {
 	}
 }
 
+func (w *Worker) WriteMessage(msg *Message) error {
+	w.wsLock.Lock()
+	defer w.wsLock.Unlock()
+
+	return w.ws.WriteJSON(msg)
+}
+
 func (w *Worker) Connect(ws *websocket.Conn) {
 	cid := uuid.NewString()
 	log.Info("connect ", cid)
@@ -72,7 +81,7 @@ func (w *Worker) Connect(ws *websocket.Conn) {
 		log.Trace("viewer receive", w.id, cid, msg)
 
 		msg.Id = cid
-		err = w.ws.WriteJSON(msg)
+		err = w.WriteMessage(&msg)
 		if err != nil {
 			log.Error(err)
 			break
