@@ -8,34 +8,34 @@ import (
 	"sync"
 )
 
-type Worker struct {
+type Streamer struct {
 	id      string
 	ws      *websocket.Conn
 	wsLock  sync.Mutex
 	viewers lib.Map[Viewer] //viewers map[string]*Viewer
 }
 
-func (w *Worker) Close() {
-	_ = w.ws.Close()
-	w.viewers.Range(func(_ string, v *Viewer) bool {
+func (s *Streamer) Close() {
+	_ = s.ws.Close()
+	s.viewers.Range(func(_ string, v *Viewer) bool {
 		v.Close()
 		return true
 	})
 }
 
-func (w *Worker) Serve() {
+func (s *Streamer) Serve() {
 	for {
 		var msg Message
-		err := w.ws.ReadJSON(&msg)
+		err := s.ws.ReadJSON(&msg)
 		if err != nil {
 			log.Error(err)
 			break
 		}
-		log.Trace("worker receive", w.id, msg)
+		log.Trace("streamer receive", s.id, msg)
 
 		//转发
 		if msg.Id != "" {
-			client := w.viewers.Load(msg.Id)
+			client := s.viewers.Load(msg.Id)
 			if client != nil {
 				err = client.ws.WriteJSON(msg)
 				if err != nil {
@@ -53,23 +53,23 @@ func (w *Worker) Serve() {
 	}
 }
 
-func (w *Worker) WriteMessage(msg *Message) error {
-	w.wsLock.Lock()
-	defer w.wsLock.Unlock()
+func (s *Streamer) WriteMessage(msg *Message) error {
+	s.wsLock.Lock()
+	defer s.wsLock.Unlock()
 
-	return w.ws.WriteJSON(msg)
+	return s.ws.WriteJSON(msg)
 }
 
-func (w *Worker) Connect(ws *websocket.Conn) {
+func (s *Streamer) Connect(ws *websocket.Conn) {
 	cid := uuid.NewString()
 	log.Info("connect ", cid)
 
 	viewer := &Viewer{ws: ws}
 
-	w.viewers.Store(cid, viewer)
+	s.viewers.Store(cid, viewer)
 
 	//通知连接
-	//_ = w.ws.WriteJSON(&Message{Id: cid, Type: "connect"})
+	//_ = s.ws.WriteJSON(&Message{Id: cid, Type: "connect"})
 
 	for {
 		var msg Message
@@ -78,10 +78,10 @@ func (w *Worker) Connect(ws *websocket.Conn) {
 			log.Error(err)
 			break
 		}
-		log.Trace("viewer receive", w.id, cid, msg)
+		log.Trace("viewer receive", s.id, cid, msg)
 
 		msg.Id = cid
-		err = w.WriteMessage(&msg)
+		err = s.WriteMessage(&msg)
 		if err != nil {
 			log.Error(err)
 			break

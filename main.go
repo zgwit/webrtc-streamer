@@ -5,13 +5,13 @@ import (
 	"github.com/zgwit/iot-master/v4/pkg/config"
 	"github.com/zgwit/iot-master/v4/pkg/log"
 	_ "github.com/zgwit/webrtc-streamer/rtsp"
-	"github.com/zgwit/webrtc-streamer/worker"
+	"github.com/zgwit/webrtc-streamer/streamer"
 	"time"
 )
 
 func main() {
 	config.Name("webrtc-streamer")
-	viper.SetDefault("server", "ws://localhost:8080/worker/test")
+	viper.SetDefault("server", "ws://localhost:8080/streamer/test")
 
 	err := config.Load()
 	if err != nil {
@@ -19,7 +19,7 @@ func main() {
 	}
 
 	for {
-		err = worker.Open(viper.GetString("server"))
+		err = streamer.Open(viper.GetString("server"))
 		if err != nil {
 			log.Error(err)
 		}

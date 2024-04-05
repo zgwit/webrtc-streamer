@@ -31,7 +31,7 @@ func main() {
 		}
 
 		//注册
-		server.ConnectWorker(ctx.Param("id"), ws)
+		server.ConnectStreamer(ctx.Param("id"), ws)
 	})
 
 	app.GET("streamer/:id/connect", func(ctx *gin.Context) {

@@ -7,27 +7,27 @@ import (
 )
 
 type Server struct {
-	workers lib.Map[Worker]
+	streamers lib.Map[Streamer]
 }
 
-// ConnectWorker 注册Worker
-func (s *Server) ConnectWorker(id string, ws *websocket.Conn) {
-	worker := s.workers.Load(id)
-	if worker != nil {
-		worker.Close()
+// ConnectStreamer 注册
+func (s *Server) ConnectStreamer(id string, ws *websocket.Conn) {
+	streamer := s.streamers.Load(id)
+	if streamer != nil {
+		streamer.Close()
 	}
 
-	worker = &Worker{id: id, ws: ws}
-	s.workers.Store(id, worker)
+	streamer = &Streamer{id: id, ws: ws}
+	s.streamers.Store(id, streamer)
 
-	worker.Serve()
+	streamer.Serve()
 }
 
 func (s *Server) ConnectViewer(id string, ws *websocket.Conn) {
-	worker := s.workers.Load(id)
-	if worker == nil {
-		log.Errorf("worker %s not exits ", id)
+	streamer := s.streamers.Load(id)
+	if streamer == nil {
+		log.Errorf("streamer %s not exits ", id)
 		return
 	}
-	worker.Connect(ws)
+	streamer.Connect(ws)
 }

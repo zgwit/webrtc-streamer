@@ -1,4 +1,4 @@
-package worker
+package streamer
 
 import (
 	"encoding/json"

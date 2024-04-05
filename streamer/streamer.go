@@ -1,4 +1,4 @@
-package worker
+package streamer
 
 import (
 	"github.com/gorilla/websocket"
