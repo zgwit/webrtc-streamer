@@ -13,6 +13,10 @@ go get -u github.com/zgwit/webrtc-streamer
 
 项目实现了独立的信令服务器，推流端可以放在内网，实现p2p直播更方便！
 
+推流器支持正向握手，反向握手
+
+ICE交换使用trickle ice模式，速度更快（平均1.5秒）
+
 ps. 项目主要是为实现物联大师（物联网云平台）的视频监控远程接入功能，有兴趣的小伙伴可以去看看，顺便加个星。
 
 [github.com/zgwit/iot-master](https://github.com/zgwit/iot-master)
@@ -20,7 +24,8 @@ ps. 项目主要是为实现物联大师（物联网云平台）的视频监控�
 ## 开发进度
 
 - [x] 信令服务器
-- [x] 不转码，直接分发
+- [x] WebRTC推流
+- [x] 视频分发
 - [x] rtsp视频 h264
 - [ ] rtsp视频 h265（已实现，待验证）
 - [ ] rtsp转码 （格式，压缩，抽帧等）
