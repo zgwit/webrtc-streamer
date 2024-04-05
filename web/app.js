@@ -1,7 +1,7 @@
 let stream = new MediaStream()
 let pc = new RTCPeerConnection()
 
-let ws = new WebSocket("ws://localhost:8080/connect/test")
+let ws = new WebSocket("ws://localhost:8080/streamer/test/connect")
 let id
 
 function send(type, data) {

@@ -23,7 +23,7 @@ func main() {
 	app := gin.Default()
 	app.Use(cors.Default())
 
-	app.GET("worker/:id", func(ctx *gin.Context) {
+	app.GET("streamer/:id", func(ctx *gin.Context) {
 		ws, err := upper.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			log.Error(err)
@@ -34,7 +34,7 @@ func main() {
 		server.ConnectWorker(ctx.Param("id"), ws)
 	})
 
-	app.GET("connect/:id", func(ctx *gin.Context) {
+	app.GET("streamer/:id/connect", func(ctx *gin.Context) {
 		ws, err := upper.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			log.Error(err)
