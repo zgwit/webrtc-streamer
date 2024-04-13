@@ -3,7 +3,7 @@ package streamer
 import (
 	"github.com/gorilla/websocket"
 	"github.com/zgwit/iot-master/v4/lib"
-	"github.com/zgwit/iot-master/v4/pkg/log"
+	"github.com/zgwit/iot-master/v4/log"
 	"github.com/zgwit/webrtc-streamer/signaling"
 	"sync"
 )

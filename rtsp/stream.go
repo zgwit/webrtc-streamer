@@ -7,7 +7,7 @@ import (
 	"github.com/deepch/vdk/codec/h265parser"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
-	"github.com/zgwit/iot-master/v4/pkg/log"
+	"github.com/zgwit/iot-master/v4/log"
 )
 
 type Stream struct {

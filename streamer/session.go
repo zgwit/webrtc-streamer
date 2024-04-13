@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/pion/interceptor"
 	"github.com/pion/webrtc/v3"
-	"github.com/zgwit/iot-master/v4/pkg/log"
+	"github.com/zgwit/iot-master/v4/log"
 	"github.com/zgwit/webrtc-streamer/signaling"
 	"github.com/zgwit/webrtc-streamer/source"
 )

@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/spf13/viper"
-	"github.com/zgwit/iot-master/v4/pkg/config"
-	"github.com/zgwit/iot-master/v4/pkg/log"
+	"github.com/zgwit/iot-master/v4/config"
+	"github.com/zgwit/iot-master/v4/log"
 	_ "github.com/zgwit/webrtc-streamer/rtsp"
 	"github.com/zgwit/webrtc-streamer/streamer"
 	"time"
