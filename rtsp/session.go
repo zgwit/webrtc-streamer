@@ -2,7 +2,7 @@ package rtsp
 
 import (
 	"github.com/deepch/vdk/av"
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 type Session struct {

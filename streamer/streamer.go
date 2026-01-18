@@ -1,18 +1,22 @@
-package streamer
+package main
 
 import (
-	"github.com/gorilla/websocket"
-	"github.com/zgwit/iot-master/v4/lib"
-	"github.com/zgwit/iot-master/v4/log"
-	"github.com/zgwit/webrtc-streamer/signaling"
 	"sync"
+	"webrtc-streamer/signaling"
+
+	"github.com/busy-cloud/boat/lib"
+	"github.com/busy-cloud/boat/log"
+	"github.com/gorilla/websocket"
 )
 
 var server *websocket.Conn
 
 var sessions lib.Map[Session]
 
-func Open(url string) (err error) {
+func Open() (err error) {
+	url := config.Server + "/stream/" + config.Id
+	log.Info("connect ", url)
+
 	server, _, err = websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return err

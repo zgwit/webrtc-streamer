@@ -1,12 +1,13 @@
-package streamer
+package main
 
 import (
 	"encoding/json"
+	"webrtc-streamer/signaling"
+	"webrtc-streamer/source"
+
+	"github.com/busy-cloud/boat/log"
 	"github.com/pion/interceptor"
-	"github.com/pion/webrtc/v3"
-	"github.com/zgwit/iot-master/v4/log"
-	"github.com/zgwit/webrtc-streamer/signaling"
-	"github.com/zgwit/webrtc-streamer/source"
+	"github.com/pion/webrtc/v4"
 )
 
 type Session struct {
@@ -38,7 +39,7 @@ func (s *Session) Report(tp string, data string) {
 func (s *Session) Handle(msg *signaling.Message) {
 	switch msg.Type {
 	case "ice":
-
+		//s.handleIce(msg.Data)
 	case "connect":
 		s.handleConnect(msg.Data)
 	case "disconnect":
@@ -159,10 +160,10 @@ func (s *Session) handleCandidate(str string) {
 }
 
 func (s *Session) createPeerConnection() (err error) {
-	config := webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback}
+	cfg := webrtc.Configuration{SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback}
 
-	if len(config.ICEServers) == 0 {
-		config.ICEServers = []webrtc.ICEServer{{URLs: []string{"stun:stun.l.google.com:19302"}}}
+	if len(cfg.ICEServers) == 0 {
+		cfg.ICEServers = config.IceServers
 	}
 
 	me := &webrtc.MediaEngine{}
@@ -178,7 +179,7 @@ func (s *Session) createPeerConnection() (err error) {
 	}
 
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithInterceptorRegistry(r))
-	s.pc, err = api.NewPeerConnection(config)
+	s.pc, err = api.NewPeerConnection(cfg)
 	if err != nil {
 		return
 	}

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	"webrtc-streamer/signaling"
+
+	"github.com/busy-cloud/boat/log"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/zgwit/iot-master/v4/log"
-	"github.com/zgwit/webrtc-streamer/signaling"
-	"net/http"
 )
 
 var upper = &websocket.Upgrader{
@@ -20,10 +22,17 @@ var upper = &websocket.Upgrader{
 var server signaling.Server
 
 func main() {
+	err := Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//创建服务器
 	app := gin.Default()
 	app.Use(cors.Default())
 
-	app.GET("streamer/:id", func(ctx *gin.Context) {
+	//推流接入
+	app.GET("stream/:id", func(ctx *gin.Context) {
 		ws, err := upper.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			log.Error(err)
@@ -34,7 +43,8 @@ func main() {
 		server.ConnectStreamer(ctx.Param("id"), ws)
 	})
 
-	app.GET("streamer/:id/connect", func(ctx *gin.Context) {
+	//客户端
+	app.GET("view/:id", func(ctx *gin.Context) {
 		ws, err := upper.Upgrade(ctx.Writer, ctx.Request, nil)
 		if err != nil {
 			log.Error(err)
@@ -44,9 +54,13 @@ func main() {
 		server.ConnectViewer(ctx.Param("id"), ws)
 	})
 
-	err := app.Run(":8080")
+	//开始监听
+	addr := fmt.Sprintf(":%d", config.Port)
+	err = app.Run(addr)
 	if err != nil {
 		log.Error(err)
 		return
 	}
+
+	//TODO TLS
 }

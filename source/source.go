@@ -1,6 +1,6 @@
 package source
 
-import "github.com/pion/webrtc/v3"
+import "github.com/pion/webrtc/v4"
 
 type Source interface {
 	Check() error

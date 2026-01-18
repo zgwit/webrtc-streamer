@@ -1,11 +1,12 @@
 package signaling
 
 import (
+	"sync"
+
+	"github.com/busy-cloud/boat/lib"
+	"github.com/busy-cloud/boat/log"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/zgwit/iot-master/v4/lib"
-	"github.com/zgwit/iot-master/v4/log"
-	"sync"
 )
 
 type Streamer struct {

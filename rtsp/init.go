@@ -1,7 +1,7 @@
 package rtsp
 
 import (
-	"github.com/zgwit/webrtc-streamer/source"
+	"webrtc-streamer/source"
 )
 
 func init() {
@@ -9,5 +9,5 @@ func init() {
 }
 
 func factory(url string, options source.Options) (source.Source, error) {
-	return &Camera{Url: url}, nil
+	return &Client{Url: url}, nil
 }

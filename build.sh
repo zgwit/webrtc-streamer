@@ -11,6 +11,6 @@ go env -w GOSUMDB=off
 export GOARCH=amd64
 export GOOS=windows
 
-go build -o signaling-server.exe server/main.go
+go build -o webrtc-server.exe server/main.go
 
-go build -o webrtc-streamer.exe main.go
+go build -o webrtc-streamer.exe streamer/main.go

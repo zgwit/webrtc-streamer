@@ -1,0 +1,8 @@
+iceservers:
+    - urls:
+        - stun:stun.l.google.com:19302
+      username: ""
+      credential: null
+      credentialtype: 0
+server: ws://localhost:8080
+id: 4JPs8h5iNxBWrvGX

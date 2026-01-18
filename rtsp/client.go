@@ -2,13 +2,14 @@ package rtsp
 
 import (
 	"errors"
-	"github.com/deepch/vdk/format/rtspv2"
-	"github.com/pion/webrtc/v3"
-	"github.com/zgwit/iot-master/v4/lib"
 	"time"
+
+	"github.com/busy-cloud/boat/lib"
+	"github.com/deepch/vdk/format/rtspv2"
+	"github.com/pion/webrtc/v4"
 )
 
-type Camera struct {
+type Client struct {
 	Url   string
 	Audio bool
 
@@ -18,7 +19,7 @@ type Camera struct {
 	clients lib.Map[Session]
 }
 
-func (c *Camera) Check() error {
+func (c *Client) Check() error {
 	if c.rtsp != nil {
 		return nil
 	}
@@ -39,7 +40,7 @@ func (c *Camera) Check() error {
 	return nil
 }
 
-func (c *Camera) Attach(cid string, pc *webrtc.PeerConnection) error {
+func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) error {
 	if c.rtsp == nil {
 		return errors.New("未连接")
 	}
@@ -50,11 +51,11 @@ func (c *Camera) Attach(cid string, pc *webrtc.PeerConnection) error {
 	return s.attach(c.rtsp.CodecData)
 }
 
-func (c *Camera) handleCodecUpdate() {
+func (c *Client) handleCodecUpdate() {
 	//TODO 动态添加到pc上
 }
 
-func (c *Camera) receive() {
+func (c *Client) receive() {
 	defer func() {
 		c.rtsp.Close()
 		c.rtsp = nil

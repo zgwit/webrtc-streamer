@@ -1,9 +1,9 @@
 package signaling
 
 import (
+	"github.com/busy-cloud/boat/lib"
+	"github.com/busy-cloud/boat/log"
 	"github.com/gorilla/websocket"
-	"github.com/zgwit/iot-master/v4/lib"
-	"github.com/zgwit/iot-master/v4/log"
 )
 
 type Server struct {

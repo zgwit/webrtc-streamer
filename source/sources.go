@@ -2,8 +2,9 @@ package source
 
 import (
 	"errors"
-	"github.com/zgwit/iot-master/v4/lib"
 	"strings"
+
+	"github.com/busy-cloud/boat/lib"
 )
 
 type Factory func(url string, options Options) (Source, error)
