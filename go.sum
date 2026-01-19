@@ -2,6 +2,10 @@ gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a h1:lSA0F4e9A2NcQSqGq
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a/go.mod h1:EXuID2Zs0pAQhH8yz+DNjUbjppKQzKFAn28TMYPB6IU=
 github.com/blackjack/webcam v0.6.1 h1:K0T6Q0zto23U99gNAa5q/hFoye6uGcKr2aE6hFoxVoE=
 github.com/blackjack/webcam v0.6.1/go.mod h1:zs+RkUZzqpFPHPiwBZ6U5B34ZXXe9i+SiHLKnnukJuI=
+github.com/bluenviron/gortsplib/v5 v5.2.2 h1:5q2viB8PGxWOSXNhVvj8buyr1wighLbHqRZ0U7MLM3o=
+github.com/bluenviron/gortsplib/v5 v5.2.2/go.mod h1:xkVBOAnR4fzaerPN650CBb7N+zUUsj7PI2HiY1TP7Co=
+github.com/bluenviron/mediacommon/v2 v2.6.0 h1:wZAPXwv7V78Cx2x7cToYIHOLToHl6APcvHbdQT+gOkg=
+github.com/bluenviron/mediacommon/v2 v2.6.0/go.mod h1:5V15TiOfeaNVmZPVuOqAwqQSWyvMV86/dijDKu5q9Zs=
 github.com/busy-cloud/boat v0.7.5 h1:zqfW12uZf1G1Z2X1Tj1f7WB/grTxg5nsNg06Nc8Q+1A=
 github.com/busy-cloud/boat v0.7.5/go.mod h1:altMy+/ntoXP1shCUWnaSa6AkAP6v/ridlQ2qPLddYM=
 github.com/bytedance/sonic v1.14.0 h1:/OfKt8HFw0kh2rj8N0F6C/qPGRESq0BbaNZgcNXXzQQ=
@@ -22,8 +26,6 @@ github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/gabriel-vasile/mimetype v1.4.9 h1:5k+WDwEsD9eTLL8Tz3L0VnmVh9QxGjRmjBvAG7U/oYY=
 github.com/gabriel-vasile/mimetype v1.4.9/go.mod h1:WnSQhFKJuBlRyLiKohA/2DtIlPFAbguNaG7QCHcyGok=
-github.com/gen2brain/malgo v0.11.24 h1:hHcIJVfzWcEDHFdPl5Dl/CUSOjzOleY0zzAV8Kx+imE=
-github.com/gen2brain/malgo v0.11.24/go.mod h1:f9TtuN7DVrXMiV/yIceMeWpvanyVzJQMlBecJFVMxww=
 github.com/gen2brain/shm v0.1.0 h1:MwPeg+zJQXN0RM9o+HqaSFypNoNEcNpeoGp0BTSx2YY=
 github.com/gen2brain/shm v0.1.0/go.mod h1:UgIcVtvmOu+aCJpqJX7GOtiN7X2ct+TKLg4RTxwPIUA=
 github.com/gin-contrib/cors v1.7.6 h1:3gQ8GMzs1Ylpf70y8bMw4fVpycXIeX1ZemuSQIsnQQY=

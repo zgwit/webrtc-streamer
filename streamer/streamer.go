@@ -45,6 +45,7 @@ func Open() (err error) {
 var writeLock sync.Mutex
 
 func WriteMessage(msg *signaling.Message) error {
+	log.Info("WriteMessage msg ", msg)
 	writeLock.Lock()
 	defer writeLock.Unlock()
 	return server.WriteJSON(&msg)

@@ -7,10 +7,12 @@ go env -w GOPROXY=https://goproxy.cn,direct
 go env -w GOPRIVATE=*.gitlab.com,*.gitee.com
 go env -w GOSUMDB=off
 
+export CC=gcc
+export CGO_ENABLED=1
 
 export GOARCH=amd64
 export GOOS=windows
 
-go build -o webrtc-server.exe server/main.go
+go build -o webrtc-server.exe ./server/
 
-go build -o webrtc-streamer.exe streamer/main.go
+go build -o webrtc-streamer.exe ./streamer/

@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/pion/mediadevices"
-	"github.com/pion/mediadevices/pkg/prop"
+	"github.com/pion/mediadevices/pkg/codec/vpx"
 	"github.com/pion/webrtc/v4"
 
 	// 驱动，需要开启CGO
@@ -25,12 +25,44 @@ func (c *Camera) Check() (err error) {
 		return nil
 	}
 
+	me := webrtc.MediaEngine{}
+	me.RegisterDefaultCodecs()
+
+	// Create a new RTCPeerConnection
+	//x264Params, err := x264.NewParams()
+	//if err != nil {
+	//	return err
+	//}
+	//x264Params.BitRate = 500_000 // 500kbps
+
+	//x264Params, err := openh264.NewParams()
+	//if err != nil {
+	//	return err
+	//}
+	//x264Params.BitRate = 500_000 // 500kbps
+
+	vp9params, err := vpx.NewVP9Params()
+	if err != nil {
+		return err
+	}
+	vp9params.BitRate = 500_000
+
+	//opusParams, err := opus.NewParams()
+	//if err != nil {
+	//	return err
+	//}
+
 	c.stream, err = mediadevices.GetUserMedia(mediadevices.MediaStreamConstraints{
 		Video: func(constraint *mediadevices.MediaTrackConstraints) {
-			constraint.Width = prop.Int(640)
-			constraint.Height = prop.Int(480)
+			//constraint.FrameFormat = prop.FrameFormatOneOf{frame.FormatI420}
+			//constraint.Width = prop.Int(640)
+			//constraint.Height = prop.Int(480)
 			//TODO 参数 宽高，帧率，编码，等
 		},
+		Codec: mediadevices.NewCodecSelector(
+			mediadevices.WithVideoEncoders(&vp9params),
+			//mediadevices.WithAudioEncoders(&opusParams),
+		),
 	})
 	return
 }

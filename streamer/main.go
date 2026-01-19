@@ -2,8 +2,8 @@ package main
 
 import (
 	"time"
-	_ "webrtc-streamer/camera" //默认支持RTSP协议
-	_ "webrtc-streamer/rtsp"   //默认支持RTSP协议
+	//_ "webrtc-streamer/camera" //默认支持摄像头
+	_ "webrtc-streamer/rtsp" //默认支持RTSP协议
 
 	"github.com/busy-cloud/boat/log"
 )

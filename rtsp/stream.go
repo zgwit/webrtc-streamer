@@ -7,6 +7,7 @@ import (
 	"github.com/deepch/vdk/av"
 	"github.com/deepch/vdk/codec/h264parser"
 	"github.com/deepch/vdk/codec/h265parser"
+	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
 )
@@ -16,7 +17,12 @@ type Stream struct {
 	track *webrtc.TrackLocalStaticSample
 }
 
-func (t *Stream) Write(pkt *av.Packet) error {
+func (t *Stream) Write(pkt *rtp.Packet) error {
+
+	return nil
+}
+
+func (t *Stream) Write2(pkt *av.Packet) error {
 	switch t.codec.Type() {
 	case av.H264:
 		nalus, _ := h264parser.SplitNALUs(pkt.Data)

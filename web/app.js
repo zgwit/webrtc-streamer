@@ -19,6 +19,7 @@ ws.onerror = console.error
 ws.onopen = function (event) {
     console.log("websocket onopen")
     send("connect", {url: "rtsp://localhost:8554/mystream"})
+    //send("connect", {url: "webcam://"})
 }
 
 ws.onmessage = async function (event) {
@@ -61,6 +62,7 @@ pc.ontrack = function (event) {
     stream.addTrack(event.track);
     let videoElem = document.getElementById("video")
     videoElem.srcObject = stream;
+    videoElem.play()
 }
 
 pc.onicecandidate = function (event) {
@@ -74,4 +76,5 @@ pc.oniceconnectionstatechange = function (event) {
 }
 
 pc.addTransceiver("video", {'direction': 'sendrecv'})
+//pc.addTransceiver("video", {'direction': 'recvonly'})
 
