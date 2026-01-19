@@ -1,11 +1,8 @@
 package rtsp
 
 import (
-	"time"
-
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
-	"github.com/pion/webrtc/v4/pkg/media"
 )
 
 type Packet struct {
@@ -18,18 +15,18 @@ type Viewer struct {
 
 	ssrc uint32
 
-	videoQueue chan []byte
-	audioQueue chan []byte
+	videoQueue chan *rtp.Packet
+	audioQueue chan *rtp.Packet
 
-	videoTrack *webrtc.TrackLocalStaticSample
-	audioTrack *webrtc.TrackLocalStaticSample
+	videoTrack *webrtc.TrackLocalStaticRTP
+	audioTrack *webrtc.TrackLocalStaticRTP
 }
 
 func newViewer(pc *webrtc.PeerConnection) *Viewer {
 	s := &Viewer{
 		pc:         pc,
-		videoQueue: make(chan []byte, 100),
-		audioQueue: make(chan []byte, 100),
+		videoQueue: make(chan *rtp.Packet, 100),
+		audioQueue: make(chan *rtp.Packet, 100),
 	}
 
 	go s.videoSender()
@@ -38,13 +35,13 @@ func newViewer(pc *webrtc.PeerConnection) *Viewer {
 	return s
 }
 
-func (s *Viewer) PutVideo(data []byte) {
+func (s *Viewer) PutVideo(data *rtp.Packet) {
 	if len(s.videoQueue) < cap(s.videoQueue) {
 		s.videoQueue <- data
 	}
 }
 
-func (s *Viewer) PutAudio(data []byte) {
+func (s *Viewer) PutAudio(data *rtp.Packet) {
 	if len(s.audioQueue) < cap(s.audioQueue) {
 		s.audioQueue <- data
 	}
@@ -57,10 +54,9 @@ func (s *Viewer) videoSender() {
 		if pkt == nil {
 			break
 		}
-		err := s.videoTrack.WriteSample(media.Sample{
-			Data:     pkt,
-			Duration: time.Second / 30, //帧率
-		})
+
+		//pkt.SSRC = s.ssrc
+		err := s.videoTrack.WriteRTP(pkt)
 		if err != nil {
 			break
 		}
@@ -74,10 +70,7 @@ func (s *Viewer) audioSender() {
 		if pkt == nil {
 			break
 		}
-		err := s.audioTrack.WriteSample(media.Sample{
-			Data:     pkt,
-			Duration: time.Second / 30, //帧率
-		})
+		err := s.audioTrack.WriteRTP(pkt)
 		if err != nil {
 			break
 		}

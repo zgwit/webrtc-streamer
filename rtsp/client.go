@@ -32,6 +32,7 @@ type Client struct {
 	videoFormat string
 	videoCodec  string
 	videoDecode Decode
+	videoEncode Encode
 
 	audioFormat string
 	audioCodec  string
@@ -82,6 +83,13 @@ func (c *Client) Check() error {
 					decoder := &rtph264.Decoder{}
 					_ = decoder.Init()
 					c.videoDecode = decoder.Decode
+					encoder := &rtph264.Encoder{
+						PayloadType: 96,
+					}
+					_ = encoder.Init()
+					c.videoEncode = func(au []byte) ([]*rtp.Packet, error) {
+						return encoder.Encode([][]byte{au})
+					}
 				case "H265":
 					c.videoFormat = webrtc.MimeTypeH265
 					c.videoCodec = codec
@@ -178,35 +186,36 @@ func (c *Client) Check() error {
 	//监听数据包，并转发
 	c.client.OnPacketRTPAny(func(media *description.Media, format format.Format, packet *rtp.Packet) {
 
-		if media.Type == description.MediaTypeVideo {
-			nalus, err := c.videoDecode(packet)
+		//临时代码
+		nalus, err := c.videoDecode(packet)
+		if err != nil {
+			return
+		}
+
+		for _, nalu := range nalus {
+			pkts, err := c.videoEncode(nalu)
 			if err != nil {
-
-				if errors.Is(err, rtph264.ErrNonStartingPacketAndNoPrevious) ||
-					errors.Is(err, rtph264.ErrMorePacketsNeeded) {
-					return
-				}
-
-				log.Error(err)
 				return
 			}
-
-			for _, nalu := range nalus {
-				//H264
-				nalu = append([]byte{0, 0, 0, 1}, nalu...)
+			for _, pkt := range pkts {
+				pkt.Payload = append([]byte{0, 0, 0, 1}, pkt.Payload...)
 				c.viewers.Range(func(name string, viewer *Viewer) bool {
-					viewer.PutVideo(nalu)
-					//for _, pkt := range nalus {
-					//	//pkt.SSRC = viewer.ssrc //修改webrtc的SSRC
-					//	viewer.PutVideo(pkt)
-					//}
+					viewer.PutVideo(pkt)
 					return true
 				})
 			}
+		}
 
+		return
+
+		if media.Type == description.MediaTypeVideo {
+			c.viewers.Range(func(name string, viewer *Viewer) bool {
+				viewer.PutVideo(packet)
+				return true
+			})
 		} else if media.Type == description.MediaTypeAudio {
 			c.viewers.Range(func(name string, viewer *Viewer) bool {
-				//viewer.PutAudio(packet)
+				viewer.PutAudio(packet)
 				return true
 			})
 		}
@@ -223,7 +232,7 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	s := newViewer(pc)
 
 	if c.videoFormat != "" {
-		s.videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: c.videoFormat}, "pion-video", "pion-video")
+		s.videoTrack, err = webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: c.videoFormat}, "pion-video", "pion-video")
 		if err != nil {
 			return err
 		}
@@ -236,7 +245,7 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	}
 
 	if c.audioFormat != "" {
-		s.audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: c.audioFormat}, "pion-audio", "pion-audio")
+		s.audioTrack, err = webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: c.audioFormat}, "pion-audio", "pion-audio")
 		if err != nil {
 			return err
 		}
