@@ -25,6 +25,8 @@ func newSession(id string) *Session {
 }
 
 func (s *Session) Close() error {
+	_ = s.source.Detach(s.Id)
+	sessions.Delete(s.Id)
 	return s.pc.Close()
 }
 
@@ -100,7 +102,7 @@ func (s *Session) handleConnect(data string) {
 }
 
 func (s *Session) handleDisconnect(data string) {
-	sessions.Delete(s.Id)
+	_ = s.Close()
 }
 
 func (s *Session) handleOffer(sdp string) {
@@ -166,6 +168,8 @@ func (s *Session) createPeerConnection() (err error) {
 		cfg.ICEServers = config.IceServers
 	}
 
+	//TODO 复用
+
 	me := &webrtc.MediaEngine{}
 	err = me.RegisterDefaultCodecs()
 	if err != nil {
@@ -186,9 +190,13 @@ func (s *Session) createPeerConnection() (err error) {
 
 	//监听主要事件
 	s.pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		if connectionState == webrtc.ICEConnectionStateDisconnected {
+		//连接失败或断开,刚删除
+		if connectionState == webrtc.ICEConnectionStateDisconnected ||
+			connectionState == webrtc.ICEConnectionStateFailed ||
+			connectionState == webrtc.ICEConnectionStateClosed {
 			_ = s.Close()
 		}
+
 		s.Report("state", connectionState.String())
 	})
 	s.pc.OnDataChannel(func(d *webrtc.DataChannel) {

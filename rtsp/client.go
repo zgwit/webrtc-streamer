@@ -16,6 +16,7 @@ import (
 	"github.com/busy-cloud/boat/log"
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
+	"github.com/pion/rtp/codecs"
 	"github.com/pion/webrtc/v4"
 )
 
@@ -29,6 +30,9 @@ type Client struct {
 	client *gortsplib.Client
 	//medias []*description.Media
 
+	depacketizer codecs.H264Packet
+	payloader    codecs.H264Payloader
+
 	videoFormat string
 	videoCodec  string
 	videoDecode Decode
@@ -38,6 +42,8 @@ type Client struct {
 	audioCodec  string
 
 	viewers lib.Map[Viewer]
+
+	sentIdr bool
 }
 
 func (c *Client) Check() error {
@@ -184,7 +190,7 @@ func (c *Client) Check() error {
 	})
 
 	//监听数据包，并转发
-	c.client.OnPacketRTPAny(func(media *description.Media, format format.Format, packet *rtp.Packet) {
+	c.client.OnPacketRTPAny(func(media *description.Media, forma format.Format, packet *rtp.Packet) {
 
 		//临时代码
 		nalus, err := c.videoDecode(packet)
@@ -192,32 +198,49 @@ func (c *Client) Check() error {
 			return
 		}
 
+		var ps [][]byte
 		for _, nalu := range nalus {
-			pkts, err := c.videoEncode(nalu)
-			if err != nil {
-				return
+			naluType := nalu[0] & 0x1f
+
+			//IDR帧
+			if naluType == 5 && !c.sentIdr {
+				fm := forma.(*format.H264)
+				log.Println("idr frame")
+				ps = append(ps, fm.SPS, fm.PPS, nalu)
+				//ps = append(ps, bytes.Join([][]byte{fm.SPS, fm.PPS, nalu}, []byte{0, 0, 0, 1}))
+				c.sentIdr = true
+			} else {
+				ps = append(ps, nalu)
 			}
-			for _, pkt := range pkts {
-				pkt.Payload = append([]byte{0, 0, 0, 1}, pkt.Payload...)
+
+			//if naluType == 5 && c.sps != nil && c.pps != nil {
+			//	ps = append(ps, c.sps, c.pps)
+			//}
+			//ps = append(ps, nalu)
+
+			for _, p := range ps {
+				pp := append([]byte{0, 0, 0, 1}, p...)
 				c.viewers.Range(func(name string, viewer *Viewer) bool {
-					viewer.PutVideo(pkt)
+					viewer.PutVideo(pp)
 					return true
 				})
 			}
-		}
 
-		return
+			//for _, p := range ps {
+			//	c.sendNALU(p)
+			//}
 
-		if media.Type == description.MediaTypeVideo {
-			c.viewers.Range(func(name string, viewer *Viewer) bool {
-				viewer.PutVideo(packet)
-				return true
-			})
-		} else if media.Type == description.MediaTypeAudio {
-			c.viewers.Range(func(name string, viewer *Viewer) bool {
-				viewer.PutAudio(packet)
-				return true
-			})
+			//pkts, err := c.videoEncode(nalu)
+			//if err != nil {
+			//	return
+			//}
+			//for _, pkt := range pkts {
+			//	pkt.Payload = append([]byte{0, 0, 0, 1}, pkt.Payload...)
+			//	c.viewers.Range(func(name string, viewer *Viewer) bool {
+			//		viewer.PutVideo(pkt)
+			//		return true
+			//	})
+			//}
 		}
 	})
 
@@ -232,7 +255,7 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	s := newViewer(pc)
 
 	if c.videoFormat != "" {
-		s.videoTrack, err = webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: c.videoFormat}, "pion-video", "pion-video")
+		s.videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: c.videoFormat}, "pion-video", "pion-video")
 		if err != nil {
 			return err
 		}
@@ -245,7 +268,7 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	}
 
 	if c.audioFormat != "" {
-		s.audioTrack, err = webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: c.audioFormat}, "pion-audio", "pion-audio")
+		s.audioTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: c.audioFormat}, "pion-audio", "pion-audio")
 		if err != nil {
 			return err
 		}
@@ -257,5 +280,10 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	}
 
 	c.viewers.Store(cid, s)
+	return nil
+}
+
+func (c *Client) Detach(cid string) error {
+	c.viewers.Delete(cid)
 	return nil
 }
