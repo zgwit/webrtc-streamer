@@ -198,50 +198,43 @@ func (c *Client) Check() error {
 			return
 		}
 
+		isKeyFrame := false
+
 		var ps [][]byte
+
 		for _, nalu := range nalus {
 			naluType := nalu[0] & 0x1f
-
-			//IDR帧
-			if naluType == 5 && !c.sentIdr {
-				fm := forma.(*format.H264)
+			if naluType == 7 || naluType == 8 || naluType == 9 {
+				continue
+			}
+			if naluType == 5 && !isKeyFrame {
 				log.Println("idr frame")
-				ps = append(ps, fm.SPS, fm.PPS, nalu)
-				//ps = append(ps, bytes.Join([][]byte{fm.SPS, fm.PPS, nalu}, []byte{0, 0, 0, 1}))
-				c.sentIdr = true
-			} else {
-				ps = append(ps, nalu)
+				isKeyFrame = true
 			}
-
-			//if naluType == 5 && c.sps != nil && c.pps != nil {
-			//	ps = append(ps, c.sps, c.pps)
-			//}
-			//ps = append(ps, nalu)
-
-			for _, p := range ps {
-				pp := append([]byte{0, 0, 0, 1}, p...)
-				c.viewers.Range(func(name string, viewer *Viewer) bool {
-					viewer.PutVideo(pp)
-					return true
-				})
-			}
-
-			//for _, p := range ps {
-			//	c.sendNALU(p)
-			//}
-
-			//pkts, err := c.videoEncode(nalu)
-			//if err != nil {
-			//	return
-			//}
-			//for _, pkt := range pkts {
-			//	pkt.Payload = append([]byte{0, 0, 0, 1}, pkt.Payload...)
-			//	c.viewers.Range(func(name string, viewer *Viewer) bool {
-			//		viewer.PutVideo(pkt)
-			//		return true
-			//	})
-			//}
 		}
+
+		//关键帧
+		if isKeyFrame {
+			fm := forma.(*format.H264)
+			ps = append(ps, fm.SPS, fm.PPS)
+		}
+
+		for _, nalu := range nalus {
+			naluType := nalu[0] & 0x1f
+			if naluType == 7 || naluType == 8 || naluType == 9 {
+				continue
+			}
+			ps = append(ps, nalu)
+		}
+
+		for _, p := range ps {
+			pp := append([]byte{0, 0, 0, 1}, p...)
+			c.viewers.Range(func(name string, viewer *Viewer) bool {
+				viewer.PutVideo(pp)
+				return true
+			})
+		}
+
 	})
 
 	return nil
@@ -255,7 +248,10 @@ func (c *Client) Attach(cid string, pc *webrtc.PeerConnection) (err error) {
 	s := newViewer(pc)
 
 	if c.videoFormat != "" {
-		s.videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: c.videoFormat}, "pion-video", "pion-video")
+		s.videoTrack, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{
+			MimeType:    c.videoFormat,
+			SDPFmtpLine: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f",
+		}, "pion-video", "pion-video")
 		if err != nil {
 			return err
 		}
